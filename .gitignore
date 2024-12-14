@@ -1,9 +1,10 @@
 import os
 import requests
 from telegram import Update
-from telegram.constants import ChatAction
+from telegram.constants import ChatAction  # To'g'ri import
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import instaloader
+import nest_asyncio
 import asyncio
 
 # Instagramdan video yuklab olish funksiyasi
@@ -17,9 +18,6 @@ def download_instagram_video(post_url):
             return post.video_url
         else:
             return None
-    except instaloader.exceptions.InstaloaderException as e:
-        print(f"Instagramdan video yuklab olishda xatolik: {e}")
-        return None
     except Exception as e:
         print(f"Xatolik: {e}")
         return None
@@ -36,16 +34,9 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
 
     # Havolani tozalash funksiyasi
     def clean_url(post_url):
-        post_url = post_url.strip()  # Ortqa bo'sh joylardan tozalash
-        if 'instagram.com' not in post_url:
-            return None
         return post_url.split('?')[0]
 
     cleaned_url = clean_url(video_url)
-
-    if not cleaned_url:
-        await update.message.reply_text("Iltimos, to'g'ri Instagram havolasini yuboring.")
-        return
 
     # Foydalanuvchiga animatsiyani ko'rsatish (video yuborilyapti)
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.UPLOAD_VIDEO)
@@ -56,7 +47,7 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
         try:
             # Video kontentni yuklash
             video_content = requests.get(download_url).content
-            video_path = "/tmp/downloaded_video.mp4"  # Faylni saqlash joyi
+            video_path = "downloaded_video.mp4"
 
             # Video faylni saqlash
             with open(video_path, "wb") as video_file:
@@ -96,4 +87,5 @@ async def main():
 
 # Skriptni ishga tushirish
 if __name__ == "__main__":
-    asyncio.run(main())  # Joriy event loopga asinxron kodni bajarishga ruxsat berish
+    nest_asyncio.apply()  # Joriy event loopga asinxron kodni bajarishga ruxsat berish
+    asyncio.run(main())
