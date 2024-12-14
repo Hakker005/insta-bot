@@ -1,1 +1,1 @@
-worker: python insta_video.p
+worker: python insta_video.py
