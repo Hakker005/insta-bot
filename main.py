@@ -1,16 +1,25 @@
 import os
 import requests
 from telegram import Update
-from telegram.constants import ChatAction  # To'g'ri import
+from telegram.constants import ChatAction
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import instaloader
 import nest_asyncio
 import asyncio
+from dotenv import load_dotenv
+
+# .env faylni yuklash
+load_dotenv()
+
+# Instagram login va parolni olish
+INSTAGRAM_USERNAME = os.getenv("INSTAGRAM_USERNAME")
+INSTAGRAM_PASSWORD = os.getenv("INSTAGRAM_PASSWORD")
 
 # Instagramdan video yuklab olish funksiyasi
 def download_instagram_video(post_url):
     try:
         loader = instaloader.Instaloader()
+        loader.login(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)  # Login qilish
         shortcode = post_url.split("/")[-2]  # Havoladan shortcode-ni ajratib olish
         post = instaloader.Post.from_shortcode(loader.context, shortcode)
 
@@ -22,7 +31,7 @@ def download_instagram_video(post_url):
         print(f"Xatolik: {e}")
         return None
 
-# Start komandasini ishlash funksiyasi
+# /start komandasini ishlash funksiyasi
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Salom! Instagram video havolani yuboring, men sizga videoni yuklab beraman."
@@ -38,7 +47,7 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
 
     cleaned_url = clean_url(video_url)
 
-    # Foydalanuvchiga animatsiyani ko'rsatish (video yuborilyapti)
+    # Foydalanuvchiga animatsiyani ko'rsatish
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.UPLOAD_VIDEO)
 
     # Videoni yuklab olish
@@ -71,7 +80,7 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
 
 # Asosiy bot dasturi
 async def main():
-    BOT_TOKEN = "6693824512:AAE7k1FvtjKN64BxSibWbcRoDXa_bHmvCGo"  # O'zingizning Telegram bot tokeningizni kiriting
+    BOT_TOKEN = os.getenv("BOT_TOKEN")  # Telegram bot tokenini olish
     if not BOT_TOKEN:
         print("Iltimos, bot tokenini kiriting.")
         return
@@ -87,5 +96,5 @@ async def main():
 
 # Skriptni ishga tushirish
 if __name__ == "__main__":
-    nest_asyncio.apply()  # Joriy event loopga asinxron kodni bajarishga ruxsat berish
+    nest_asyncio.apply()
     asyncio.run(main())
