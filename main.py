@@ -7,21 +7,19 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 # RapidAPI kalitini bu yerga kiritamiz
 RAPIDAPI_KEY = "7ea1caf5a1msh56c0d672c066325p17f7eajsnde7cddd47a77"  # Siz bergan kalit
 
-# RapidAPI orqali Instagram videoni yuklash funksiyasi
-def download_instagram_video(video_url):
+# Instagram postlarini olish funksiyasi
+def get_instagram_posts(user_id):
     try:
-        url = "https://instagram-scrapper-video-reel-image-downloader-api.p.rapidapi.com/instantdownloader.php"  # To'g'ri API endpoint
+        url = f"https://instagram-api-media-downloader.p.rapidapi.com/user/posts/{user_id}"  # Foydalanuvchi postlarini olish endpointi
         headers = {
             "X-RapidAPI-Key": RAPIDAPI_KEY,
-            "Content-Type": "application/json"
+            "X-RapidAPI-HOST": "instagram-api-media-downloader.p.rapidapi.com"
         }
-        payload = {"url": video_url, "type": "reel"}  # "type": "reel" deb belgilaymiz, bu video turini bildiradi
 
-        response = requests.post(url, headers=headers, json=payload)
+        response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            # JSON ichidan video yuklash havolasini olish
-            return response.json().get("video_url")
+            return response.json()  # Postlar ro'yxatini qaytaradi
         else:
             print(f"Xatolik: {response.status_code}, {response.text}")
             return None
@@ -32,48 +30,35 @@ def download_instagram_video(video_url):
 # /start komandasini ishlash funksiyasi
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "Salom! Instagram video havolani yuboring, men sizga videoni yuklab beraman."
+        "Salom! Instagram foydalanuvchi ID'sini yuboring, men sizga uning postlarini yuboraman."
     )
 
-# Instagram havolasini qabul qilish va video yuklab berish funksiyasi
-async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    video_url = update.message.text.strip()
-
-    # Havolani tozalash funksiyasi
-    def clean_url(post_url):
-        return post_url.split('?')[0]
-
-    cleaned_url = clean_url(video_url)
+# Instagram ID yuborish va postlarni yuborish funksiyasi
+async def handle_instagram_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.text.strip()
 
     # Foydalanuvchiga animatsiyani ko'rsatish
-    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.UPLOAD_VIDEO)
+    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.UPLOAD_PHOTO)
 
-    # Videoni yuklab olish
-    download_url = download_instagram_video(cleaned_url)
-    if download_url:
+    # Instagram postlarini olish
+    posts = get_instagram_posts(user_id)
+    if posts:
         try:
-            # Video kontentni yuklash
-            video_content = requests.get(download_url).content
-            video_path = "downloaded_video.mp4"
-
-            # Video faylni saqlash
-            with open(video_path, "wb") as video_file:
-                video_file.write(video_content)
-
-            # Video yuborish
-            with open(video_path, "rb") as video_file:
-                await update.message.reply_video(video=video_file)
-
-            # Faylni o'chirish
-            os.remove(video_path)
+            # Postlar ro'yxatini yuborish
+            for post in posts.get("data", []):
+                post_image_url = post.get("image_url")  # Rasm yoki video URL manzilini olish
+                if post_image_url:
+                    await update.message.reply_photo(photo=post_image_url)
+                else:
+                    await update.message.reply_text("Rasm yoki video topilmadi.")
         except Exception as e:
-            print(f"Video yuborishda xatolik: {e}")
+            print(f"Post yuborishda xatolik: {e}")
             await update.message.reply_text(
-                "Video yuborishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring."
+                "Postlarni yuborishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring."
             )
     else:
         await update.message.reply_text(
-            "Video yuklashda xatolik yuz berdi. Iltimos, to'g'ri Instagram havolasini yuboring."
+            "Postlarni olishda xatolik yuz berdi. Iltimos, to'g'ri foydalanuvchi ID'sini yuboring."
         )
 
 # Asosiy bot dasturi
@@ -87,7 +72,7 @@ async def main():
 
     # Handlerlarni qo'shamiz
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_instagram_link))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_instagram_id))
 
     # Botni ishga tushiramiz
     await application.run_polling()
