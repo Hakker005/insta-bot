@@ -8,19 +8,23 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 RAPIDAPI_KEY = "7ea1caf5a1msh56c0d672c066325p17f7eajsnde7cddd47a77"  # Siz bergan kalit
 
 # Instagram postini yuklab olish funksiyasi
-def download_instagram_post(post_url):
+def download_instagram_reel(post_url):
     try:
-        url = "https://instagram-api-media-downloader.p.rapidapi.com/instantdownloader"  # To'g'ri endpoint
+        # URL tozalash
+        cleaned_url = clean_url(post_url)
+
+        # API URL va parametrlar
+        url = "https://instagram-api-media-downloader.p.rapidapi.com/instantdownloader"
         headers = {
             "X-RapidAPI-Key": RAPIDAPI_KEY,
             "Content-Type": "application/json"
         }
-        payload = {"url": post_url}  # Instagram post havolasi
+        payload = {"url": cleaned_url}  # Tozalangan URL
 
         response = requests.post(url, json=payload, headers=headers)
 
         if response.status_code == 200:
-            return response.json()  # Postni yuklab olish uchun JSON javobi
+            return response.json()  # Video URL'sini qaytaradi
         else:
             print(f"Xatolik: {response.status_code}, {response.text}")
             return None
@@ -33,6 +37,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Salom! Instagram post havolasini yuboring, men sizga videoni yoki rasmni yuboraman."
     )
+def clean_url(post_url):
+    # Instagram URL'ini tozalash
+    return post_url.split('?')[0]
 
 # Instagram post havolasini qabul qilish va yuborish funksiyasi
 async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
