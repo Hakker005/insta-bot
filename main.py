@@ -6,14 +6,10 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import instaloader
 import nest_asyncio
 import asyncio
-from dotenv import load_dotenv
 
-# .env faylni yuklash
-load_dotenv()
-
-# Instagram login va parolni olish
-INSTAGRAM_USERNAME = os.getenv("INSTAGRAM_USERNAME")
-INSTAGRAM_PASSWORD = os.getenv("INSTAGRAM_PASSWORD")
+# Instagram login va parolni kodga yozish
+INSTAGRAM_USERNAME = "vd.uz.05"  # Instagram username
+INSTAGRAM_PASSWORD = "hokimjon0705"  # Instagram password
 
 # Instagramdan video yuklab olish funksiyasi
 def download_instagram_video(post_url):
@@ -80,7 +76,7 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
 
 # Asosiy bot dasturi
 async def main():
-    BOT_TOKEN = os.getenv("BOT_TOKEN")  # Telegram bot tokenini olish
+    BOT_TOKEN = "6693824512:AAE7k1FvtjKN64BxSibWbcRoDXa_bHmvCGo"  # Telegram bot tokenini olish
     if not BOT_TOKEN:
         print("Iltimos, bot tokenini kiriting.")
         return
@@ -97,6 +93,7 @@ async def main():
 # Skriptni ishga tushirish
 if __name__ == "__main__":
     try:
+        nest_asyncio.apply()  # Joriy event loopga asinxron kodni bajarishga ruxsat berish
         asyncio.run(main())  # Yangi loop yaratib ishga tushirish
     except RuntimeError as e:
         if "Cannot close a running event loop" in str(e):
