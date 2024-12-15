@@ -8,7 +8,7 @@ import nest_asyncio
 import asyncio
 
 # Instagram login va parolni kodga yozish
-INSTAGRAM_USERNAME = "hokim_shox_0705"  # Instagram username
+INSTAGRAM_USERNAME = "vd.uz.05"  # Instagram username
 INSTAGRAM_PASSWORD = "hokimjon0705"  # Instagram password
 
 # Instagramdan video yuklab olish funksiyasi
