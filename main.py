@@ -10,7 +10,7 @@ RAPIDAPI_KEY = "7ea1caf5a1msh56c0d672c066325p17f7eajsnde7cddd47a77"  # Siz berga
 # Instagram postini yuklab olish funksiyasi
 def download_instagram_post(post_url):
     try:
-        url = "https://instagram-api-media-downloader.p.rapidapi.com/instantdownloader.php"  # API endpoint
+        url = "https://instagram-api-media-downloader.p.rapidapi.com/instantdownloader"  # To'g'ri endpoint
         headers = {
             "X-RapidAPI-Key": RAPIDAPI_KEY,
             "Content-Type": "application/json"
