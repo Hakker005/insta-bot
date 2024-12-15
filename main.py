@@ -3,25 +3,27 @@ import requests
 from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-import instaloader
-import nest_asyncio
-import asyncio
 
-# Instagram login va parolni kodga yozish
-INSTAGRAM_USERNAME = "ibroximjon_3939"  # Instagram username
-INSTAGRAM_PASSWORD = "hokimjon0705"  # Instagram password
+# RapidAPI kalitini bu yerga kiritamiz
+RAPIDAPI_KEY = "7ea1caf5a1msh56c0d672c066325p17f7eajsnde7cddd47a77"  # Siz bergan kalit
 
-# Instagramdan video yuklab olish funksiyasi
-def download_instagram_video(post_url):
+# RapidAPI orqali Instagram videoni yuklash funksiyasi
+def download_instagram_video(video_url):
     try:
-        loader = instaloader.Instaloader()
-        loader.login(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)  # Login qilish
-        shortcode = post_url.split("/")[-2]  # Havoladan shortcode-ni ajratib olish
-        post = instaloader.Post.from_shortcode(loader.context, shortcode)
+        url = "https://instagram-downloader-url/v1/media"  # RapidAPI-dagi endpoint
+        headers = {
+            "X-RapidAPI-Key": RAPIDAPI_KEY,
+            "Content-Type": "application/json"
+        }
+        payload = {"url": video_url}
 
-        if post.is_video:
-            return post.video_url
+        response = requests.post(url, headers=headers, json=payload)
+
+        if response.status_code == 200:
+            # JSON ichidan video yuklash havolasini olish
+            return response.json().get("video_url")
         else:
+            print(f"Xatolik: {response.status_code}, {response.text}")
             return None
     except Exception as e:
         print(f"Xatolik: {e}")
@@ -33,7 +35,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Salom! Instagram video havolani yuboring, men sizga videoni yuklab beraman."
     )
 
-# Instagram havolasini qabul qilish va video yuklab berish
+# Instagram havolasini qabul qilish va video yuklab berish funksiyasi
 async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     video_url = update.message.text.strip()
 
@@ -76,7 +78,7 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
 
 # Asosiy bot dasturi
 async def main():
-    BOT_TOKEN = "6693824512:AAE7k1FvtjKN64BxSibWbcRoDXa_bHmvCGo"  # Telegram bot tokenini olish
+    BOT_TOKEN = "6693824512:AAE7k1FvtjKN64BxSibWbcRoDXa_bHmvCGo"  # Telegram bot tokenini kiritasiz
     if not BOT_TOKEN:
         print("Iltimos, bot tokenini kiriting.")
         return
@@ -92,6 +94,9 @@ async def main():
 
 # Skriptni ishga tushirish
 if __name__ == "__main__":
+    import nest_asyncio
+    import asyncio
+
     try:
         nest_asyncio.apply()  # Joriy event loopga asinxron kodni bajarishga ruxsat berish
         asyncio.run(main())  # Yangi loop yaratib ishga tushirish
