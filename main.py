@@ -10,12 +10,12 @@ RAPIDAPI_KEY = "7ea1caf5a1msh56c0d672c066325p17f7eajsnde7cddd47a77"  # Siz berga
 # RapidAPI orqali Instagram videoni yuklash funksiyasi
 def download_instagram_video(video_url):
     try:
-        url = "https://instagram-downloader-url/v1/media"  # RapidAPI-dagi endpoint
+        url = "https://instagram-scrapper-video-reel-image-downloader-api.p.rapidapi.com/instantdownloader.php"  # To'g'ri API endpoint
         headers = {
             "X-RapidAPI-Key": RAPIDAPI_KEY,
             "Content-Type": "application/json"
         }
-        payload = {"url": video_url}
+        payload = {"url": video_url, "type": "reel"}  # "type": "reel" deb belgilaymiz, bu video turini bildiradi
 
         response = requests.post(url, headers=headers, json=payload)
 
