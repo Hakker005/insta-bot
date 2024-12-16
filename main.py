@@ -4,50 +4,32 @@ from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import asyncio
-import instaloader
 import nest_asyncio
 
-# Instagram uchun sozlamalar
-INSTAGRAM_USERNAME = "vd.uz.05"  # Instagram login
-INSTAGRAM_PASSWORD = "hokimjon0705"  # Instagram parol
+# RapidAPI sozlamalari
+RAPIDAPI_URL = "https://instagram-downloader-download-instagram-stories-videos4.p.rapidapi.com/convert"
+RAPIDAPI_HEADERS = {
+    "x-rapidapi-key": "0e0d0195f2msh144975ff2f0cbe8p1dad89jsne878cc69dd3f",  # Yangilangan kalit
+    "x-rapidapi-host": "instagram-downloader-download-instagram-stories-videos4.p.rapidapi.com",
+}
 
-def login_instagram():
-    """Instaloader orqali Instagram akkauntga kirish"""
-    loader = instaloader.Instaloader()
-    try:
-        loader.load_session_from_file(INSTAGRAM_USERNAME)
-        print("Instagramga muvaffaqiyatli kirdingiz!")
-    except FileNotFoundError:
-        print("Sessiya topilmadi, yangi login qilish kerak.")
-        try:
-            loader.login(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
-            loader.save_session_to_file()  # Sessiyani saqlash
-            print("Instagramga muvaffaqiyatli kirdingiz!")
-        except Exception as e:
-            print(f"Instagramga kirishda xatolik: {e}")
-            return None
-    except Exception as e:
-        print(f"Instagramga kirishda xatolik: {e}")
-        return None
-    return loader
-
+# Instagramdan video yuklash funksiyasi
 def download_instagram_video(post_url):
-    """Instagram postining videosini yuklab olish"""
-    loader = login_instagram()
-    if not loader:
-        return None
-
     try:
-        post = instaloader.Post.from_shortcode(loader.context, post_url.split("/")[-2])
-        if post.is_video:
-            video_url = post.video_url
-            print(f"Video URL: {video_url}")
+        querystring = {"url": post_url}
+        response = requests.get(RAPIDAPI_URL, headers=RAPIDAPI_HEADERS, params=querystring)
+        response_data = response.json()
+
+        print(f"API javobi: {response_data}")
+
+        # Video URL ni olish
+        if "media" in response_data and len(response_data["media"]) > 0:
+            video_url = response_data["media"][0]["url"]
             return video_url
         else:
-            print("Berilgan postda video yo'q.")
             return None
     except Exception as e:
-        print(f"Postni yuklashda xatolik: {e}")
+        print(f"Xatolik: {e}")
         return None
 
 # /start komandasini ishlash funksiyasi
