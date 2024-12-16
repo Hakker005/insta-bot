@@ -7,12 +7,12 @@ import asyncio
 import nest_asyncio
 
 # RapidAPI sozlamalari
-RAPIDAPI_URL = "https://instagram-downloader-download-instagram-stories-videos4.p.rapidapi.com/convert"
+# API sozlamalari
+RAPIDAPI_URL = "https://instagram-scraper-api2.p.rapidapi.com/v1/media_info"
 RAPIDAPI_HEADERS = {
-    "x-rapidapi-key": "0e0d0195f2msh144975ff2f0cbe8p1dad89jsne878cc69dd3f",  # Yangilangan kalit
-    "x-rapidapi-host": "instagram-downloader-download-instagram-stories-videos4.p.rapidapi.com",
+    "x-rapidapi-key": "0e0d0195f2msh144975ff2f0cbe8p1dad89jsne878cc69dd3f",
+    "x-rapidapi-host": "instagram-scraper-api2.p.rapidapi.com"
 }
-
 # Instagramdan video yuklash funksiyasi
 def download_instagram_video(post_url):
     try:
