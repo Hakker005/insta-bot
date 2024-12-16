@@ -7,12 +7,23 @@ import asyncio
 import nest_asyncio
 
 # RapidAPI sozlamalari
-# API sozlamalari
-RAPIDAPI_URL = "https://instagram-scraper-api2.p.rapidapi.com/v1/media_info"
-RAPIDAPI_HEADERS = {
+
+# API endpoint va parametrlarni sozlash
+url = "https://instagram-scraper-api2.p.rapidapi.com/v1/highlight_info"
+querystring = {"highlight_id": "17907964880010937"}
+
+# API so'rovi uchun headerlar
+headers = {
     "x-rapidapi-key": "0e0d0195f2msh144975ff2f0cbe8p1dad89jsne878cc69dd3f",
     "x-rapidapi-host": "instagram-scraper-api2.p.rapidapi.com"
 }
+
+# APIga so'rov yuborish
+response = requests.get(url, headers=headers, params=querystring)
+
+# API javobini chiqarish
+print(response.json())
+
 # Instagramdan video yuklash funksiyasi
 def download_instagram_video(post_url):
     try:
