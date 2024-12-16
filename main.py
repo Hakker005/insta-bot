@@ -1,30 +1,25 @@
 import os
 import requests
+import instaloader
 from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import asyncio
 import nest_asyncio
 
-# RapidAPI sozlamalari
-RAPIDAPI_URL = "https://instagram-scraper-api2.p.rapidapi.com/v1/media_info"
-RAPIDAPI_HEADERS = {
-    "x-rapidapi-key": "0e0d0195f2msh144975ff2f0cbe8p1dad89jsne878cc69dd3f",
-    "x-rapidapi-host": "instagram-scraper-api2.p.rapidapi.com",
-}
-
-# Instagramdan video yuklash funksiyasi
+# Instaloader orqali Instagramdan media yuklash
 def download_instagram_video(post_url):
     try:
-        querystring = {"url": post_url}  # To'g'ri parametr: 'url'
-        response = requests.get(RAPIDAPI_URL, headers=RAPIDAPI_HEADERS, params=querystring)
-        response_data = response.json()
-
-        print(f"API javobi: {response_data}")
+        # Instaloader ob'ektini yaratish
+        L = instaloader.Instaloader()
 
         # Video URL ni olish
-        if "media" in response_data and len(response_data["media"]) > 0:
-            video_url = response_data["media"][0]["url"]
+        post_shortcode = post_url.split("/")[-2]  # Post URLdan shortcode olish
+        post = instaloader.Post.from_shortcode(L.context, post_shortcode)
+
+        # Agar post video bo'lsa
+        if post.is_video:
+            video_url = post.video_url
             return video_url
         else:
             return None
