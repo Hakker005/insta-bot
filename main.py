@@ -1,5 +1,5 @@
 import os
-import requests
+import requests  # Bu yerda kutubxona import qilinadi
 import instaloader
 from telegram import Update
 from telegram.constants import ChatAction
@@ -8,16 +8,18 @@ import asyncio
 import nest_asyncio
 
 # Instaloader orqali Instagramdan media yuklash
+
+
 def download_instagram_video(post_url):
     try:
         # Instaloader ob'ektini yaratish
         L = instaloader.Instaloader()
 
-        # Video URL ni olish
-        post_shortcode = post_url.split("/")[-2]  # Post URLdan shortcode olish
+        # Post URL'dan shortcode olish
+        post_shortcode = post_url.split("/")[-2]
         post = instaloader.Post.from_shortcode(L.context, post_shortcode)
 
-        # Agar post video bo'lsa
+        # Video bo'lsa, URL ni olish
         if post.is_video:
             video_url = post.video_url
             return video_url
@@ -26,6 +28,7 @@ def download_instagram_video(post_url):
     except Exception as e:
         print(f"Xatolik: {e}")
         return None
+
 
 # /start komandasini ishlash funksiyasi
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -44,8 +47,8 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
     download_url = download_instagram_video(video_url)
     if download_url:
         try:
-            # Video kontentni yuklash
-            video_content = requests.get(download_url).content
+            # Video URLni yuklab olish
+            video_content = requests.get(download_url).content  # requests kutubxonasi bilan video kontentini olish
             video_path = "downloaded_video.mp4"
 
             # Video faylni saqlash
