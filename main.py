@@ -1,15 +1,20 @@
 import os
-import requests  # Bu yerda kutubxona import qilinadi
+import requests
 import instaloader
 from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import asyncio
+import aiohttp
 import nest_asyncio
+import ssl
 
-# Instaloader orqali Instagramdan media yuklash
+# SSL kontekstini sozlash
+ssl_context = ssl.create_default_context()
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
 
-
+# Instaloader orqali Instagramdan video URL olish
 def download_instagram_video(post_url):
     try:
         # Instaloader ob'ektini yaratish
@@ -29,11 +34,24 @@ def download_instagram_video(post_url):
         print(f"Xatolik: {e}")
         return None
 
+# Videoni asinxron yuklash
+async def download_video(session, url):
+    try:
+        async with session.get(url, ssl=ssl_context) as response:
+            if response.status == 200:
+                print(f"Video yuklanmoqda: {url}")
+                return await response.read()
+            else:
+                print(f"Xatolik: {response.status}")
+                return None
+    except Exception as e:
+        print(f"Xatolik: {e}")
+        return None
 
 # /start komandasini ishlash funksiyasi
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "Salom! Instagram video havolani yuboring, men sizga videoni yuklab beraman."
+        "Salom! Instagram video havolasini yuboring, men sizga videoni yuklab beraman."
     )
 
 # Instagram havolasini qabul qilish va video yuklab berish
@@ -47,20 +65,24 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
     download_url = download_instagram_video(video_url)
     if download_url:
         try:
-            # Video URLni yuklab olish
-            video_content = requests.get(download_url).content  # requests kutubxonasi bilan video kontentini olish
-            video_path = "downloaded_video.mp4"
+            # Asinxron sessiya yaratish
+            async with aiohttp.ClientSession() as session:
+                video_content = await download_video(session, download_url)
+                if video_content:
+                    video_path = "downloaded_video.mp4"
 
-            # Video faylni saqlash
-            with open(video_path, "wb") as video_file:
-                video_file.write(video_content)
+                    # Video faylni saqlash
+                    with open(video_path, "wb") as video_file:
+                        video_file.write(video_content)
 
-            # Video yuborish
-            with open(video_path, "rb") as video_file:
-                await update.message.reply_video(video=video_file)
+                    # Video yuborish
+                    with open(video_path, "rb") as video_file:
+                        await update.message.reply_video(video=video_file)
 
-            # Faylni o'chirish
-            os.remove(video_path)
+                    # Faylni o'chirish
+                    os.remove(video_path)
+                else:
+                    await update.message.reply_text("Video yuklashda xatolik yuz berdi.")
         except Exception as e:
             print(f"Video yuborishda xatolik: {e}")
             await update.message.reply_text(
@@ -73,7 +95,7 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
 
 # Asosiy bot dasturi
 async def main():
-    BOT_TOKEN = "6693824512:AAE7k1FvtjKN64BxSibWbcRoDXa_bHmvCGo"  # Telegram bot tokenini olish
+    BOT_TOKEN = "6693824512:AAE7k1FvtjKN64BxSibWbcRoDXa_bHmvCGo"
     if not BOT_TOKEN:
         print("Iltimos, bot tokenini kiriting.")
         return
