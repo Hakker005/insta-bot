@@ -2,3 +2,4 @@ requests
 instaloader
 python-telegram-bot
 nest-asyncio
+aiohttp
