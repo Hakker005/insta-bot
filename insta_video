@@ -1,28 +1,38 @@
 import os
 import requests
 from telegram import Update
-from telegram.constants import ChatAction  # To'g'ri import
+from telegram.constants import ChatAction
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-import instaloader
-import nest_asyncio
 import asyncio
+import nest_asyncio
 
-# Instagramdan video yuklab olish funksiyasi
+# RapidAPI sozlamalari
+RAPIDAPI_URL = "https://instagram-downloader-download-instagram-stories-videos4.p.rapidapi.com/convert"
+RAPIDAPI_HEADERS = {
+    "x-rapidapi-key": "7ea1caf5a1msh56c0d672c066325p17f7eajsnde7cddd47a77",
+    "x-rapidapi-host": "instagram-downloader-download-instagram-stories-videos4.p.rapidapi.com",
+}
+
+# Instagramdan video yuklash funksiyasi
 def download_instagram_video(post_url):
     try:
-        loader = instaloader.Instaloader()
-        shortcode = post_url.split("/")[-2]  # Havoladan shortcode-ni ajratib olish
-        post = instaloader.Post.from_shortcode(loader.context, shortcode)
+        querystring = {"url": post_url}
+        response = requests.get(RAPIDAPI_URL, headers=RAPIDAPI_HEADERS, params=querystring)
+        response_data = response.json()
 
-        if post.is_video:
-            return post.video_url
+        print(f"API javobi: {response_data}")
+
+        # Video URL ni olish
+        if "media" in response_data and len(response_data["media"]) > 0:
+            video_url = response_data["media"][0]["url"]
+            return video_url
         else:
             return None
     except Exception as e:
         print(f"Xatolik: {e}")
         return None
 
-# Start komandasini ishlash funksiyasi
+# /start komandasini ishlash funksiyasi
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Salom! Instagram video havolani yuboring, men sizga videoni yuklab beraman."
@@ -32,17 +42,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     video_url = update.message.text.strip()
 
-    # Havolani tozalash funksiyasi
-    def clean_url(post_url):
-        return post_url.split('?')[0]
-
-    cleaned_url = clean_url(video_url)
-
-    # Foydalanuvchiga animatsiyani ko'rsatish (video yuborilyapti)
+    # Foydalanuvchiga animatsiyani ko'rsatish
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.UPLOAD_VIDEO)
 
     # Videoni yuklab olish
-    download_url = download_instagram_video(cleaned_url)
+    download_url = download_instagram_video(video_url)
     if download_url:
         try:
             # Video kontentni yuklash
@@ -71,7 +75,7 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
 
 # Asosiy bot dasturi
 async def main():
-    BOT_TOKEN = "6693824512:AAE7k1FvtjKN64BxSibWbcRoDXa_bHmvCGo"  # O'zingizning Telegram bot tokeningizni kiriting
+    BOT_TOKEN = "6693824512:AAE7k1FvtjKN64BxSibWbcRoDXa_bHmvCGo"  # Telegram bot tokenini olish
     if not BOT_TOKEN:
         print("Iltimos, bot tokenini kiriting.")
         return
@@ -87,5 +91,11 @@ async def main():
 
 # Skriptni ishga tushirish
 if __name__ == "__main__":
-    nest_asyncio.apply()  # Joriy event loopga asinxron kodni bajarishga ruxsat berish
-    asyncio.run(main())
+    try:
+        nest_asyncio.apply()  # Joriy event loopga asinxron kodni bajarishga ruxsat berish
+        asyncio.run(main())  # Yangi loop yaratib ishga tushirish
+    except RuntimeError as e:
+        if "Cannot close a running event loop" in str(e):
+            print("Event loop allaqachon ishlayapti, mavjud loopdan foydalanamiz.")
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(main())
