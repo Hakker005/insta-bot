@@ -19,6 +19,7 @@ def download_instagram_video(post_url):
     try:
         # Instaloader ob'ektini yaratish
         L = instaloader.Instaloader()
+        L.context.proxy = "http://your_proxy_address:port"
 
         # Post URL'dan shortcode olish
         post_shortcode = post_url.split("/")[-2]
@@ -47,6 +48,12 @@ async def download_video(session, url):
     except Exception as e:
         print(f"Xatolik: {e}")
         return None
+import time
+
+def limited_request():
+    # Har bir so'rovdan keyin 60 soniya tanaffus
+    time.sleep(60)
+    # So'rovni bu yerda yuboring
 
 # /start komandasini ishlash funksiyasi
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
