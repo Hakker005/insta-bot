@@ -80,7 +80,7 @@ async def main():
         logger.error("Bot tokeni topilmadi. Muhit o'zgaruvchisida BOT_TOKEN ni sozlang.")
         return
 
-    application = Application.builder().token("6693824512:AAHdjkrF0mqVdUHgeBmb3_qPLfa7CzjKxYM").build()  # Tokenni muhit o'zgaruvchisidan olish
+    application = Application.builder().token(6693824512:AAHdjkrF0mqVdUHgeBmb3_qPLfa7CzjKxYM).build()  # Tokenni muhit o'zgaruvchisidan olish
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_instagram_link))
 
