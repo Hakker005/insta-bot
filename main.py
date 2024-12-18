@@ -1,34 +1,25 @@
 import os
-import requests
 import instaloader
-from telegram import Update
-from telegram.constants import ChatAction
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import asyncio
 import aiohttp
 import nest_asyncio
-import ssl
-
-# SSL kontekstini sozlash
-ssl_context = ssl.create_default_context()
-ssl_context.check_hostname = False
-ssl_context.verify_mode = ssl.CERT_NONE
+from telegram import Update
+from telegram.constants import ChatAction
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # Instaloader orqali Instagramdan video URL olish
 def download_instagram_video(post_url):
     try:
         # Instaloader ob'ektini yaratish
-        L = instaloader.Instaloader()
-        L.context.proxy = "http://your_proxy_address:port"
+        loader = instaloader.Instaloader()
 
         # Post URL'dan shortcode olish
         post_shortcode = post_url.split("/")[-2]
-        post = instaloader.Post.from_shortcode(L.context, post_shortcode)
+        post = instaloader.Post.from_shortcode(loader.context, post_shortcode)
 
         # Video bo'lsa, URL ni olish
         if post.is_video:
-            video_url = post.video_url
-            return video_url
+            return post.video_url
         else:
             return None
     except Exception as e:
@@ -38,7 +29,7 @@ def download_instagram_video(post_url):
 # Videoni asinxron yuklash
 async def download_video(session, url):
     try:
-        async with session.get(url, ssl=ssl_context) as response:
+        async with session.get(url) as response:
             if response.status == 200:
                 print(f"Video yuklanmoqda: {url}")
                 return await response.read()
@@ -48,12 +39,6 @@ async def download_video(session, url):
     except Exception as e:
         print(f"Xatolik: {e}")
         return None
-import time
-
-def limited_request():
-    # Har bir so'rovdan keyin 60 soniya tanaffus
-    time.sleep(60)
-    # So'rovni bu yerda yuboring
 
 # /start komandasini ishlash funksiyasi
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
