@@ -19,6 +19,8 @@ def download_instagram_video(post_url):
     try:
         # Instaloader ob'ektini yaratish
         L = instaloader.Instaloader()
+        
+        # Proxy sozlamasini qo'shish (agar kerak bo'lsa)
         L.context.proxy = "http://your_proxy_address:port"
 
         # Post URL'dan shortcode olish
@@ -43,17 +45,12 @@ async def download_video(session, url):
                 print(f"Video yuklanmoqda: {url}")
                 return await response.read()
             else:
-                print(f"Xatolik: {response.status}")
+                error_text = await response.text()
+                print(f"Xatolik: {response.status}, {error_text}")
                 return None
     except Exception as e:
         print(f"Xatolik: {e}")
         return None
-import time
-
-def limited_request():
-    # Har bir so'rovdan keyin 60 soniya tanaffus
-    time.sleep(60)
-    # So'rovni bu yerda yuboring
 
 # /start komandasini ishlash funksiyasi
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -97,7 +94,7 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
             )
     else:
         await update.message.reply_text(
-            "Video yuklashda xatolik yuz berdi. Iltimos, to'g'ri Instagram havolasini yuboring."
+            "Video yuklashda xatolik yuz berdi. Iltimos, to'g'ri Instagram havolasini yuboring. Masalan: https://www.instagram.com/p/xxxxxx/"
         )
 
 # Asosiy bot dasturi
