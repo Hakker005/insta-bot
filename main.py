@@ -19,9 +19,6 @@ def download_instagram_video(post_url):
     try:
         # Instaloader ob'ektini yaratish
         L = instaloader.Instaloader()
-        
-        # Proxy sozlamasini qo'shish (agar kerak bo'lsa)
-        # L.context.proxy = "http://your_proxy_address:port"
 
         # Post URL'dan shortcode olish
         post_shortcode = post_url.split("/")[-2]
@@ -98,7 +95,7 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
 
 # Faqat Instagram havolalari va buyruqlarga javob berish
 async def handle_other_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Instagram URL ni tekshirish
+    # Instagram URL ni tekshirish (ya'ni faqat Instagram URL lariga javob beradi)
     if re.match(r'https://www\.instagram\.com/p/[\w-]+/', update.message.text):
         return await handle_instagram_link(update, context)
 
