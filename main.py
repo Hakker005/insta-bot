@@ -1,13 +1,13 @@
 import os
+import requests
 import instaloader
 from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import asyncio
 import aiohttp
-import ssl
 import nest_asyncio
-import re
+import ssl
 
 # SSL kontekstini sozlash
 ssl_context = ssl.create_default_context()
@@ -19,6 +19,9 @@ def download_instagram_video(post_url):
     try:
         # Instaloader ob'ektini yaratish
         L = instaloader.Instaloader()
+        
+        # Proxy sozlamasini qo'shish (agar kerak bo'lsa)
+        L.context.proxy = "http://your_proxy_address:port"
 
         # Post URL'dan shortcode olish
         post_shortcode = post_url.split("/")[-2]
@@ -26,7 +29,8 @@ def download_instagram_video(post_url):
 
         # Video bo'lsa, URL ni olish
         if post.is_video:
-            return post.video_url
+            video_url = post.video_url
+            return video_url
         else:
             return None
     except Exception as e:
@@ -55,7 +59,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 # Instagram havolasini qabul qilish va video yuklab berish
-async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TYPE, video_url):
+async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    video_url = update.message.text.strip()
+
     # Foydalanuvchiga animatsiyani ko'rsatish
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.UPLOAD_VIDEO)
 
@@ -88,22 +94,12 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
             )
     else:
         await update.message.reply_text(
-            "Instagram havolasi noto'g'ri yoki video mavjud emas. Iltimos, to'g'ri havola yuboring."
+            "Video yuklashda xatolik yuz berdi. Iltimos, to'g'ri Instagram havolasini yuboring. Masalan: https://www.instagram.com/p/xxxxxx/"
         )
-
-# Har qanday havolaga javob berish
-async def handle_all_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    video_url = update.message.text.strip()
-
-    # Instagram havolasi bo'lsa video yuklash
-    if re.match(r'https://www\.instagram\.com/p/[\w-]+/', video_url):
-        await handle_instagram_link(update, context, video_url)
-    else:
-        await update.message.reply_text("Siz yuborgan havolaga javob berishim mumkin emas, lekin Instagram havolalariga javob beraman.")
 
 # Asosiy bot dasturi
 async def main():
-    BOT_TOKEN = "6693824512:AAHdjkrF0mqVdUHgeBmb3_qPLfa7CzjKxYM"  # Bot tokeningizni kiriting
+    BOT_TOKEN = "6693824512:AAHdjkrF0mqVdUHgeBmb3_qPLfa7CzjKxYM"
     if not BOT_TOKEN:
         print("Iltimos, bot tokenini kiriting.")
         return
@@ -112,22 +108,18 @@ async def main():
 
     # Handlerlarni qo'shamiz
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_all_links))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_instagram_link))
 
     # Botni ishga tushiramiz
     await application.run_polling()
 
 # Skriptni ishga tushirish
 if __name__ == "__main__":
-    import nest_asyncio
-    nest_asyncio.apply()
-
     try:
-        asyncio.run(main())
+        nest_asyncio.apply()  # Joriy event loopga asinxron kodni bajarishga ruxsat berish
+        asyncio.run(main())  # Yangi loop yaratib ishga tushirish
     except RuntimeError as e:
-        if "This event loop is already running" in str(e):
+        if "Cannot close a running event loop" in str(e):
             print("Event loop allaqachon ishlayapti, mavjud loopdan foydalanamiz.")
             loop = asyncio.get_event_loop()
             loop.run_until_complete(main())
-        else:
-            raise
