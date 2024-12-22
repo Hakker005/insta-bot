@@ -84,7 +84,7 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
         except Exception as e:
             print(f"Video yuborishda xatolik: {e}")
             await update.message.reply_text(
-                "Iltimos, qayta urinib ko'ring."
+                "Video yuborishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring."
             )
     else:
         await update.message.reply_text(
@@ -99,7 +99,7 @@ async def handle_all_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if re.match(r'https://www\.instagram\.com/p/[\w-]+/', video_url):
         await handle_instagram_link(update, context, video_url)
     else:
-        await update.message.reply_text("Instagram havola yuboring")
+        await update.message.reply_text("Siz yuborgan havolaga javob berishim mumkin emas, lekin Instagram havolalariga javob beraman.")
 
 # Asosiy bot dasturi
 async def main():
