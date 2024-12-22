@@ -1,12 +1,13 @@
 import os
 import instaloader
 from telegram import Update
-from telegram.constants import ChatAction  # ChatAction import qilindi
+from telegram.constants import ChatAction
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import asyncio
 import aiohttp
 import ssl
 import nest_asyncio
+import re
 
 # SSL kontekstini sozlash
 ssl_context = ssl.create_default_context()
@@ -95,9 +96,18 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
             "Video yuklashda xatolik yuz berdi. Iltimos, to'g'ri Instagram havolasini yuboring. Masalan: https://www.instagram.com/p/xxxxxx/"
         )
 
+# Faqat Instagram havolalari va buyruqlarga javob berish
+async def handle_other_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Instagram URL ni tekshirish
+    if re.match(r'https://www\.instagram\.com/p/[\w-]+/', update.message.text):
+        return await handle_instagram_link(update, context)
+
+    # Buyruq (start)dan boshqa xabarlar bo'lsa, hech qanday javob bermaslik
+    return
+
 # Asosiy bot dasturi
 async def main():
-    BOT_TOKEN = "6693824512:AAHdjkrF0mqVdUHgeBmb3_qPLfa7CzjKxYM"
+    BOT_TOKEN = "6693824512:AAHdjkrF0mqVdUHgeBmb3_qPLfa7CzjKxYM"  # Bot tokeningizni kiriting
     if not BOT_TOKEN:
         print("Iltimos, bot tokenini kiriting.")
         return
@@ -106,7 +116,7 @@ async def main():
 
     # Handlerlarni qo'shamiz
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_instagram_link))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_other_messages))
 
     # Botni ishga tushiramiz
     await application.run_polling()
