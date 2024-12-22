@@ -55,58 +55,51 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 # Instagram havolasini qabul qilish va video yuklab berish
-async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    video_url = update.message.text.strip()
+async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TYPE, video_url):
+    # Foydalanuvchiga animatsiyani ko'rsatish
+    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.UPLOAD_VIDEO)
 
-    # Instagram havolasining to'g'riligini tekshirish
-    if re.match(r'https://www\.instagram\.com/p/[\w-]+/', video_url):
-        # Foydalanuvchiga animatsiyani ko'rsatish
-        await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.UPLOAD_VIDEO)
+    # Videoni yuklab olish
+    download_url = download_instagram_video(video_url)
+    if download_url:
+        try:
+            # Asinxron sessiya yaratish
+            async with aiohttp.ClientSession() as session:
+                video_content = await download_video(session, download_url)
+                if video_content:
+                    video_path = "downloaded_video.mp4"
 
-        # Videoni yuklab olish
-        download_url = download_instagram_video(video_url)
-        if download_url:
-            try:
-                # Asinxron sessiya yaratish
-                async with aiohttp.ClientSession() as session:
-                    video_content = await download_video(session, download_url)
-                    if video_content:
-                        video_path = "downloaded_video.mp4"
+                    # Video faylni saqlash
+                    with open(video_path, "wb") as video_file:
+                        video_file.write(video_content)
 
-                        # Video faylni saqlash
-                        with open(video_path, "wb") as video_file:
-                            video_file.write(video_content)
+                    # Video yuborish
+                    with open(video_path, "rb") as video_file:
+                        await update.message.reply_video(video=video_file)
 
-                        # Video yuborish
-                        with open(video_path, "rb") as video_file:
-                            await update.message.reply_video(video=video_file)
-
-                        # Faylni o'chirish
-                        os.remove(video_path)
-                    else:
-                        await update.message.reply_text("Video yuklashda xatolik yuz berdi.")
-            except Exception as e:
-                print(f"Video yuborishda xatolik: {e}")
-                await update.message.reply_text(
-                    "Video yuborishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring."
-                )
-        else:
+                    # Faylni o'chirish
+                    os.remove(video_path)
+                else:
+                    await update.message.reply_text("Video yuklashda xatolik yuz berdi.")
+        except Exception as e:
+            print(f"Video yuborishda xatolik: {e}")
             await update.message.reply_text(
-                "Video yuklashda xatolik yuz berdi. Iltimos, to'g'ri Instagram havolasini yuboring. Masalan: https://www.instagram.com/p/xxxxxx/"
+                "Iltimos, qayta urinib ko'ring."
             )
     else:
         await update.message.reply_text(
-            "Iltimos, to'g'ri Instagram havolasini yuboring. Masalan: https://www.instagram.com/p/xxxxxx/"
+            "Instagram havolasi noto'g'ri yoki video mavjud emas. Iltimos, to'g'ri havola yuboring."
         )
 
-# Faqat Instagram havolalari va buyruqlarga javob berish
-async def handle_other_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Instagram URL ni tekshirish (ya'ni faqat Instagram URL lariga javob beradi)
-    if re.match(r'https://www\.instagram\.com/p/[\w-]+/', update.message.text):
-        return await handle_instagram_link(update, context)
+# Har qanday havolaga javob berish
+async def handle_all_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    video_url = update.message.text.strip()
 
-    # Buyruq (start)dan boshqa xabarlar bo'lsa, hech qanday javob bermaslik
-    return
+    # Instagram havolasi bo'lsa video yuklash
+    if re.match(r'https://www\.instagram\.com/p/[\w-]+/', video_url):
+        await handle_instagram_link(update, context, video_url)
+    else:
+        await update.message.reply_text("Instagram havola yuboring")
 
 # Asosiy bot dasturi
 async def main():
@@ -119,7 +112,7 @@ async def main():
 
     # Handlerlarni qo'shamiz
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_other_messages))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_all_links))
 
     # Botni ishga tushiramiz
     await application.run_polling()
