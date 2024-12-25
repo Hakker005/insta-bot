@@ -81,8 +81,7 @@ async def handle_instagram_link(message: Message):
 
                     # Video yuborish
                     try:
-                        # Faylni InputFile obyektiga aylantirish
-                        video_file = InputFile(path_or_bytesio=video_path)
+                        video_file = InputFile(video_path)  # Fayl yo'lidan foydalanish
                         await bot.send_video(chat_id=message.chat.id, video=video_file)
 
                         # Faylni o'chirish
@@ -93,7 +92,7 @@ async def handle_instagram_link(message: Message):
                 else:
                     await message.answer("Video yuklashda xatolik yuz berdi.")
         except Exception as e:
-            print(f"Video yuborishda xatolik: {e}")
+            print(f"Video yuklashda xatolik: {e}")
             await message.answer("Video yuklashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.")
     else:
         await message.answer(
