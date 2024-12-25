@@ -2,7 +2,7 @@ import os
 import instaloader
 import aiohttp
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import Message
+from aiogram.types import Message, InputFile
 from aiogram.filters import Command
 import ssl
 
@@ -78,8 +78,8 @@ async def handle_instagram_link(message: Message):
 
                     # Video yuborish
                     try:
-                        with open(video_path, "rb") as video_file:
-                            await bot.send_video(chat_id=message.chat.id, video=video_file)
+                        video_file = InputFile(video_path)  # Faylni InputFile obyektiga aylantirish
+                        await bot.send_video(chat_id=message.chat.id, video=video_file)
 
                         # Faylni o'chirish
                         os.remove(video_path)
