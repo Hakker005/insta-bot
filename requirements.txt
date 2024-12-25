@@ -3,3 +3,4 @@ instaloader
 python-telegram-bot
 nest-asyncio
 aiohttp
+aiogram
