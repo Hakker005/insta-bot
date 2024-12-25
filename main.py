@@ -19,9 +19,12 @@ def download_instagram_video(post_url):
     try:
         # Instaloader ob'ektini yaratish
         L = instaloader.Instaloader()
-        
+
         # Proxy sozlamasini qo'shish (agar kerak bo'lsa)
-        L.context.proxy = "http://your_proxy_address:port"
+        L.context.proxy = "http://your_proxy_address:port"  # O'z proxy manzilingizni qo'shing
+
+        # Cookie faylidan foydalanib, login qilish (agar kerak bo'lsa)
+        L.load_session_from_file("your_instagram_username")  # Foydalanuvchi nomini qo'shing
 
         # Post URL'dan shortcode olish
         post_shortcode = post_url.split("/")[-2]
