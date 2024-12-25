@@ -77,10 +77,15 @@ async def handle_instagram_link(message: Message):
                         video_file.write(video_content)
 
                     # Video yuborish
-                    await bot.send_video(chat_id=message.chat.id, video=open(video_path, "rb"))
+                    try:
+                        with open(video_path, "rb") as video_file:
+                            await bot.send_video(chat_id=message.chat.id, video=video_file)
 
-                    # Faylni o'chirish
-                    os.remove(video_path)
+                        # Faylni o'chirish
+                        os.remove(video_path)
+                    except Exception as e:
+                        print(f"Video yuborishda xatolik: {e}")
+                        await message.answer("Video yuborishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.")
                 else:
                     await message.answer("Video yuklashda xatolik yuz berdi.")
         except Exception as e:
