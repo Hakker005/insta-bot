@@ -1,4 +1,5 @@
 import os
+import requests
 import instaloader
 from telegram import Update
 from telegram.constants import ChatAction
@@ -18,21 +19,9 @@ def download_instagram_video(post_url):
     try:
         # Instaloader ob'ektini yaratish
         L = instaloader.Instaloader()
-
+        
         # Proxy sozlamasini qo'shish (agar kerak bo'lsa)
-        L.context.proxy = "http://your_proxy_address:port"  # O'z proxy manzilingizni qo'shing
-
-        # Instagram hisobiga login qilish va sessiyani saqlash
-        username = "vd.uz.05"  # O'z Instagram foydalanuvchi nomingizni qo'shing
-        password = "hokimjon0705"  # O'z Instagram parolingizni qo'shing
-
-        # Login qilish va sessiya faylini saqlash
-        try:
-            L.load_session_from_file(username)  # Agar sessiya fayli mavjud bo'lsa, uni yuklash
-        except FileNotFoundError:
-            L.context.log("Sessiya fayli topilmadi. Login qilamiz...")
-            L.login(username, password)  # Agar sessiya fayli bo'lmasa, yangi login qilamiz
-            L.save_session_to_file()  # Sessiyani saqlaymiz
+        L.context.proxy = "http://your_proxy_address:port"
 
         # Post URL'dan shortcode olish
         post_shortcode = post_url.split("/")[-2]
