@@ -1,9 +1,12 @@
 import os
+import requests
 import instaloader
+from telegram import Update
+from telegram.constants import ChatAction
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+import asyncio
 import aiohttp
-from aiogram import Bot, Dispatcher, types
-from aiogram.types import Message, InputFile
-from aiogram.filters import Command
+import nest_asyncio
 import ssl
 
 # SSL kontekstini sozlash
@@ -16,6 +19,9 @@ def download_instagram_video(post_url):
     try:
         # Instaloader ob'ektini yaratish
         L = instaloader.Instaloader()
+        
+        # Proxy sozlamasini qo'shish (agar kerak bo'lsa)
+        L.context.proxy = "http://your_proxy_address:port"
 
         # Post URL'dan shortcode olish
         post_shortcode = post_url.split("/")[-2]
@@ -23,7 +29,8 @@ def download_instagram_video(post_url):
 
         # Video bo'lsa, URL ni olish
         if post.is_video:
-            return post.video_url
+            video_url = post.video_url
+            return video_url
         else:
             return None
     except Exception as e:
@@ -35,34 +42,30 @@ async def download_video(session, url):
     try:
         async with session.get(url, ssl=ssl_context) as response:
             if response.status == 200:
+                print(f"Video yuklanmoqda: {url}")
                 return await response.read()
             else:
-                print(f"Xatolik: {response.status}")
+                error_text = await response.text()
+                print(f"Xatolik: {response.status}, {error_text}")
                 return None
     except Exception as e:
         print(f"Xatolik: {e}")
         return None
 
-# Bot tokenini o'rnating
-BOT_TOKEN = "6425621650:AAGeuGkMAhp-TTkSES6zYfNCtGFAzXpbV3U"
-if not BOT_TOKEN:
-    raise ValueError("Iltimos, bot tokenini kiriting.")
+# /start komandasini ishlash funksiyasi
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "Salom! Instagram video havolasini yuboring, men sizga videoni yuklab beraman."
+    )
 
-# Bot va Dispatcher yaratish
-bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher()
+# Instagram havolasini qabul qilish va video yuklab berish
+async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    video_url = update.message.text.strip()
 
-# /start komandasi uchun handler
-@dp.message(Command("start"))
-async def start_command(message: Message):
-    await message.answer("Salom! Instagram video havolasini yuboring, men sizga videoni yuklab beraman.")
+    # Foydalanuvchiga animatsiyani ko'rsatish
+    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.UPLOAD_VIDEO)
 
-# Instagram havolasi uchun handler
-@dp.message()
-async def handle_instagram_link(message: Message):
-    video_url = message.text.strip()
-
-    # Videoni yuklab olish uchun URL olish
+    # Videoni yuklab olish
     download_url = download_instagram_video(video_url)
     if download_url:
         try:
@@ -76,34 +79,47 @@ async def handle_instagram_link(message: Message):
                     with open(video_path, "wb") as video_file:
                         video_file.write(video_content)
 
-                    # "Video yuborilmoqda..." animatsiyasini jo'natish
-                    await bot.send_chat_action(chat_id=message.chat.id, action="upload_video")
-
                     # Video yuborish
-                    try:
-                        video_file = InputFile(video_path)  # Fayl yo'lidan foydalanish
-                        await bot.send_video(chat_id=message.chat.id, video=video_file)
+                    with open(video_path, "rb") as video_file:
+                        await update.message.reply_video(video=video_file)
 
-                        # Faylni o'chirish
-                        os.remove(video_path)
-                    except Exception as e:
-                        print(f"Video yuborishda xatolik: {e}")
-                        await message.answer("Video yuborishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.")
+                    # Faylni o'chirish
+                    os.remove(video_path)
                 else:
-                    await message.answer("Video yuklashda xatolik yuz berdi.")
+                    await update.message.reply_text("Video yuklashda xatolik yuz berdi.")
         except Exception as e:
-            print(f"Video yuklashda xatolik: {e}")
-            await message.answer("Video yuklashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.")
+            print(f"Video yuborishda xatolik: {e}")
+            await update.message.reply_text(
+                "Video yuborishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring."
+            )
     else:
-        await message.answer(
+        await update.message.reply_text(
             "Video yuklashda xatolik yuz berdi. Iltimos, to'g'ri Instagram havolasini yuboring. Masalan: https://www.instagram.com/p/xxxxxx/"
         )
 
 # Asosiy bot dasturi
 async def main():
-    await dp.start_polling(bot)
+    BOT_TOKEN = "6693824512:AAHdjkrF0mqVdUHgeBmb3_qPLfa7CzjKxYM"
+    if not BOT_TOKEN:
+        print("Iltimos, bot tokenini kiriting.")
+        return
+
+    application = Application.builder().token(BOT_TOKEN).build()
+
+    # Handlerlarni qo'shamiz
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_instagram_link))
+
+    # Botni ishga tushiramiz
+    await application.run_polling()
 
 # Skriptni ishga tushirish
 if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    try:
+        nest_asyncio.apply()  # Joriy event loopga asinxron kodni bajarishga ruxsat berish
+        asyncio.run(main())  # Yangi loop yaratib ishga tushirish
+    except RuntimeError as e:
+        if "Cannot close a running event loop" in str(e):
+            print("Event loop allaqachon ishlayapti, mavjud loopdan foydalanamiz.")
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(main())
