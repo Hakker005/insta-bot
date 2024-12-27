@@ -111,10 +111,9 @@ async def main():
 
 # Skriptni ishga tushirish
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except RuntimeError as e:
-        if "Cannot close a running event loop" in str(e):
-            print("Event loop allaqachon ishlayapti, mavjud loopdan foydalanamiz.")
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(main())
+    import nest_asyncio
+    nest_asyncio.apply()
+    
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
+
