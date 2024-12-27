@@ -1,62 +1,56 @@
 import os
 import requests
-import instaloader
 from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import asyncio
 import aiohttp
-import nest_asyncio
-import ssl
+from bs4 import BeautifulSoup
 
-# SSL kontekstini sozlash
-ssl_context = ssl.create_default_context()
-ssl_context.check_hostname = False
-ssl_context.verify_mode = ssl.CERT_NONE
 
-# Instaloader orqali Instagramdan video URL olish
-def download_instagram_video(post_url):
+# Instagramdan video URL'ni olish
+def get_instagram_video_url(post_url):
     try:
-        # Instaloader ob'ektini yaratish
-        L = instaloader.Instaloader()
-        
-        # Proxy sozlamasini qo'shish (agar kerak bo'lsa)
-        L.context.proxy = "http://your_proxy_address:port"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+        response = requests.get(post_url, headers=headers)
+        response.raise_for_status()
 
-        # Post URL'dan shortcode olish
-        post_shortcode = post_url.split("/")[-2]
-        post = instaloader.Post.from_shortcode(L.context, post_shortcode)
+        # HTML parselash
+        soup = BeautifulSoup(response.text, "html.parser")
+        video_tag = soup.find("meta", property="og:video")
 
-        # Video bo'lsa, URL ni olish
-        if post.is_video:
-            video_url = post.video_url
-            return video_url
+        if video_tag and video_tag["content"]:
+            return video_tag["content"]
         else:
             return None
     except Exception as e:
         print(f"Xatolik: {e}")
         return None
 
+
 # Videoni asinxron yuklash
 async def download_video(session, url):
     try:
-        async with session.get(url, ssl=ssl_context) as response:
+        async with session.get(url) as response:
             if response.status == 200:
                 print(f"Video yuklanmoqda: {url}")
                 return await response.read()
             else:
-                error_text = await response.text()
-                print(f"Xatolik: {response.status}, {error_text}")
+                print(f"Xatolik: {response.status}")
                 return None
     except Exception as e:
         print(f"Xatolik: {e}")
         return None
+
 
 # /start komandasini ishlash funksiyasi
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Salom! Instagram video havolasini yuboring, men sizga videoni yuklab beraman."
     )
+
 
 # Instagram havolasini qabul qilish va video yuklab berish
 async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -65,8 +59,8 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
     # Foydalanuvchiga animatsiyani ko'rsatish
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.UPLOAD_VIDEO)
 
-    # Videoni yuklab olish
-    download_url = download_instagram_video(video_url)
+    # Videoni yuklab olish uchun URL olish
+    download_url = get_instagram_video_url(video_url)
     if download_url:
         try:
             # Asinxron sessiya yaratish
@@ -97,6 +91,7 @@ async def handle_instagram_link(update: Update, context: ContextTypes.DEFAULT_TY
             "Video yuklashda xatolik yuz berdi. Iltimos, to'g'ri Instagram havolasini yuboring. Masalan: https://www.instagram.com/p/xxxxxx/"
         )
 
+
 # Asosiy bot dasturi
 async def main():
     BOT_TOKEN = "6693824512:AAHdjkrF0mqVdUHgeBmb3_qPLfa7CzjKxYM"
@@ -113,11 +108,11 @@ async def main():
     # Botni ishga tushiramiz
     await application.run_polling()
 
+
 # Skriptni ishga tushirish
 if __name__ == "__main__":
     try:
-        nest_asyncio.apply()  # Joriy event loopga asinxron kodni bajarishga ruxsat berish
-        asyncio.run(main())  # Yangi loop yaratib ishga tushirish
+        asyncio.run(main())
     except RuntimeError as e:
         if "Cannot close a running event loop" in str(e):
             print("Event loop allaqachon ishlayapti, mavjud loopdan foydalanamiz.")
