@@ -44,7 +44,7 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Foydalanuvchiga yuklangan videoni yuborish
         await update.message.reply_video(
             video=open(video_path, 'rb'),
-            caption=" 😊Shunchaki foydalaning\n@FantaYukla_bot"
+            caption=" 😊Shunchaki foydalaning\n@shoxsan_bot\ndostlarga ham ulashing"
         )
 
         # Yuklangan videoni o'chirish
