@@ -1,7 +1,8 @@
 requests
 instaloader
-python-telegram-bot
 nest-asyncio
 aiohttp
 aiogram
 beautifulsoup4
+python-telegram-bot==20.3
+yt-dlp==2023.10.07
