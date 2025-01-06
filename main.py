@@ -22,7 +22,12 @@ def download_instagram_video(url: str) -> str:
 
 # /start komandasi uchun handler
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Instagram video URL'ni yuboring!")
+    user_first_name = update.message.from_user.first_name  # Foydalanuvchining ismi
+    user_last_name = update.message.from_user.last_name  # Foydalanuvchining familiyasi (agar bo'lsa)
+    
+    # Foydalanuvchiga salom yuborish
+    await update.message.reply_text(f"Salom, {user_first_name} {user_last_name if user_last_name else ''}!\n\nBotga xush kelibsiz!")
+
 
 # Videoni yuklab olib, foydalanuvchiga jo'natish
 async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -44,7 +49,7 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Foydalanuvchiga yuklangan videoni yuborish
         await update.message.reply_video(
             video=open(video_path, 'rb'),
-            caption=" 😊Shunchaki foydalaning\n@shoxsan_bot\ndostlarga ham ulashing"
+            caption=" 😊Shunchaki foydalaning\n@shoxsan_bot\ndo'stlarga ham ulashing"
         )
 
         # Yuklangan videoni o'chirish
