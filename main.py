@@ -49,7 +49,7 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Fayl hajmini tekshirish
         if is_file_too_large(video_path):
-            download_url = f"https://yourserver.com/{os.path.basename(video_path)}"  # Fayl URL-manzili
+            download_url = f"https://buni ustida ish olib boryaptiz /{os.path.basename(video_path)}"  # Fayl URL-manzili
             await update.message.reply_text(
                 f"❗️ Video hajmi 50MB dan katta. Siz uni quyidagi havola orqali yuklab olishingiz mumkin:\n\n{download_url}"
             )
