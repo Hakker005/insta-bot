@@ -84,7 +84,7 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Fayl hajmini tekshirish
         if is_file_too_large(video_path):
-            download_url = f"https:// biz buni ham tez orada ishga qoyamiz /{os.path.basename(video_path)}"  # Fayl URL-manzili (serverdan olingan URL)
+            download_url = f"https://yourserver.com/{os.path.basename(video_path)}"  # Fayl URL-manzili (serverdan olingan URL)
             await update.message.reply_text(
                 f"❗️ Video hajmi 50MB dan katta. Siz uni quyidagi havola orqali yuklab olishingiz mumkin:\n\n{download_url}"
             )
@@ -118,6 +118,7 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
             os.remove("video.mp4")
 
 # Tugma bosilganda qo‘shiqni yoki MP3 audioni yuborish
+# Tugma bosilganda qo‘shiqni yoki MP3 audioni yuborish
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()  # Tugma bosilganda javob qaytarish
@@ -127,11 +128,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         video_url = context.user_data.get("video_url")  # Havolani olish
         if video_url:
             try:
-                # Video havolasini yuklab olish
-                _, info = download_instagram_video(video_url)
+                # Foydalanuvchiga yuklab olish boshlanishini aytish
+                status_message = await query.message.reply_text("⏳ Qo‘shiq yuklanmoqda, kuting...")
 
                 try:
                     # Qo‘shiqni yuklab olishga harakat qilish
+                    _, info = download_instagram_video(video_url)
                     song_path = download_song(info)
 
                     # Qo‘shiqni yuborish
@@ -158,14 +160,20 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     # Audioni o‘chirish
                     os.remove(audio_path)
 
+                # "Qo‘shiq yuklanmoqda..." xabarini o'chirish
+                await status_message.delete()
+
             except Exception as e:
                 await query.message.reply_text(f"❗️Xatolik yuz berdi: {str(e)}")
+                # "Qo‘shiq yuklanmoqda..." xabarini o'chirish
+                if status_message:
+                    await status_message.delete()
         else:
             await query.message.reply_text("❗️Iltimos, avval video havolasini yuboring.")
 
 # Botni ishga tushirish
 def run_bot():
-    app = ApplicationBuilder().token("6693824512:AAHdjkrF0mqVdUHgeBmb3_qPLfa7CzjKxYM").build()
+    app = ApplicationBuilder().token("YOUR_TELEGRAM_BOT_TOKEN").build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, download_video))
