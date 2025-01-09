@@ -173,7 +173,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Botni ishga tushirish
 def run_bot():
-    app = ApplicationBuilder().token("7934781663:AAFcU6tNfjENkAAJx9adI_VeM3Ouiiv330Y").build()
+    app = ApplicationBuilder().token("6693824512:AAHdjkrF0mqVdUHgeBmb3_qPLfa7CzjKxYM").build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, download_video))
