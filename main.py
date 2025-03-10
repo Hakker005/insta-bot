@@ -1,7 +1,7 @@
 import os
 import asyncio
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, CallbackQuery
 from yt_dlp import YoutubeDL
 
 # Videoni yuklab olish funksiyasi
@@ -59,25 +59,27 @@ def extract_audio_from_video(video_url: str) -> str:
             raise ValueError(f"❗️Videodan audio chiqarishda xatolik yuz berdi: {str(e)}")
 
 # /start komandasi uchun handler
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_first_name = update.message.from_user.first_name
-    user_last_name = update.message.from_user.last_name
+@app.on_message(filters.command("start"))
+async def start(client: Client, message: Message):
+    user_first_name = message.from_user.first_name
+    user_last_name = message.from_user.last_name
 
-    await update.message.reply_text(
+    await message.reply_text(
         f"Salom, {user_first_name} {user_last_name if user_last_name else ''}!\n\n"
         "Botga xush kelibsiz!\n\n🎥 Videolarini yuklab olish uchun video havolasini yuboring."
     )
 
 # Videoni yuklab olib, foydalanuvchiga jo'natish
-async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    url = update.message.text
+@app.on_message(filters.text & ~filters.command)
+async def download_video(client: Client, message: Message):
+    url = message.text
 
     try:
         # Video havolasini saqlash
-        context.user_data["video_url"] = url  # Havolani saqlash
+        client.user_data[message.from_user.id] = {"video_url": url}  # Havolani saqlash
 
         # Foydalanuvchiga yuklab olish boshlanishini aytish
-        status_message = await update.message.reply_text("⏳ Video yuklanmoqda, kuting...")
+        status_message = await message.reply_text("⏳ Video yuklanmoqda, kuting...")
 
         # Videoni yuklab olish
         video_path, info = download_instagram_video(url)
@@ -85,7 +87,7 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Fayl hajmini tekshirish
         if is_file_too_large(video_path):
             download_url = f"https://yourserver.com/{os.path.basename(video_path)}"  # Fayl URL-manzili (serverdan olingan URL)
-            await update.message.reply_text(
+            await message.reply_text(
                 f"❗️ Video hajmi 50MB dan katta. Siz uni quyidagi havola orqali yuklab olishingiz mumkin:\n\n{download_url}"
             )
         else:
@@ -95,9 +97,8 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
-            await context.bot.send_video(
-                chat_id=update.effective_chat.id,
-                video=open(video_path, 'rb'),
+            await message.reply_video(
+                video=video_path,
                 caption="😊 Videodan rohatlaning!\n\nBot: @shoxsan_bot",
                 reply_markup=reply_markup  # Tugmani yuborish
             )
@@ -109,27 +110,24 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await status_message.delete()
 
     except ValueError as ve:
-        await update.message.reply_text(str(ve))
+        await message.reply_text(str(ve))
     except Exception:
-        await update.message.reply_text("❗️Uzr, kutilmagan xatolik yuz berdi. Iltimos, qayta urinib ko‘ring.")
+        await message.reply_text("❗️Uzr, kutilmagan xatolik yuz berdi. Iltimos, qayta urinib ko‘ring.")
     finally:
         # Faylni o‘chirish
         if os.path.exists("video.mp4"):
             os.remove("video.mp4")
 
 # Tugma bosilganda qo‘shiqni yoki MP3 audioni yuborish
-# Tugma bosilganda qo‘shiqni yoki MP3 audioni yuborish
-async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()  # Tugma bosilganda javob qaytarish
-
-    if query.data == "download_song":
+@app.on_callback_query()
+async def button(client: Client, callback_query: CallbackQuery):
+    if callback_query.data == "download_song":
         # Saqlangan video havolasini olish
-        video_url = context.user_data.get("video_url")  # Havolani olish
+        video_url = client.user_data.get(callback_query.from_user.id, {}).get("video_url")  # Havolani olish
         if video_url:
             try:
                 # Foydalanuvchiga yuklab olish boshlanishini aytish
-                status_message = await query.message.reply_text("⏳ Qo‘shiq yuklanmoqda, kuting...")
+                status_message = await callback_query.message.reply_text("⏳ Qo‘shiq yuklanmoqda, kuting...")
 
                 try:
                     # Qo‘shiqni yuklab olishga harakat qilish
@@ -137,9 +135,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     song_path = download_song(info)
 
                     # Qo‘shiqni yuborish
-                    await context.bot.send_audio(
-                        chat_id=query.message.chat.id,
-                        audio=open(song_path, 'rb'),
+                    await callback_query.message.reply_audio(
+                        audio=song_path,
                         caption="🎶 Qo‘shiqdan rohatlaning!\n\nBot: @shoxsan_bot"
                     )
 
@@ -151,9 +148,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     audio_path = extract_audio_from_video(video_url)
 
                     # Videodan audio yuborish
-                    await context.bot.send_audio(
-                        chat_id=query.message.chat.id,
-                        audio=open(audio_path, 'rb'),
+                    await callback_query.message.reply_audio(
+                        audio=audio_path,
                         caption="🎧 Videodan audio chiqarildi. Marhamat!\n\nBot: @shoxsan_bot"
                     )
 
@@ -164,28 +160,16 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await status_message.delete()
 
             except Exception as e:
-                await query.message.reply_text(f"❗️Xatolik yuz berdi: {str(e)}")
+                await callback_query.message.reply_text(f"❗️Xatolik yuz berdi: {str(e)}")
                 # "Qo‘shiq yuklanmoqda..." xabarini o'chirish
                 if status_message:
                     await status_message.delete()
         else:
-            await query.message.reply_text("❗️Iltimos, avval video havolasini yuboring.")
+            await callback_query.message.reply_text("❗️Iltimos, avval video havolasini yuboring.")
 
 # Botni ishga tushirish
-def run_bot():
-    app = ApplicationBuilder().token("6693824512:AAHdjkrF0mqVdUHgeBmb3_qPLfa7CzjKxYM").build()
-
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, download_video))
-    app.add_handler(CallbackQueryHandler(button))  # Tugma bosilganda ishga tushadigan handler
+if __name__ == "__main__":
+    app = Client("my_bot", bot_token="6693824512:AAHdjkrF0mqVdUHgeBmb3_qPLfa7CzjKxYM")
 
     print("Bot ishga tushdi!")
-    app.run_polling()
-
-if __name__ == "__main__":
-    import sys
-
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-    run_bot()
+    app.run()
