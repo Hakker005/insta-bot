@@ -1,8 +1,2 @@
-requests
-instaloader
-nest-asyncio
-aiohttp
-aiogram
-beautifulsoup4
-python-telegram-bot
+pyrogram
 yt-dlp
