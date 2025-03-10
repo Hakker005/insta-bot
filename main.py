@@ -5,7 +5,7 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, 
 from yt_dlp import YoutubeDL
 
 # Botni yaratish
-app = Client("my_bot", bot_token="YOUR_BOT_TOKEN")
+app = Client("my_bot", bot_token="6693824512:AAHdjkrF0mqVdUHgeBmb3_qPLfa7CzjKxYM")
 
 # Videoni yuklab olish funksiyasi
 def download_instagram_video(url: str) -> str:
